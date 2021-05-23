@@ -114,10 +114,10 @@ def compute_counts(preds, gts, iou_thr=0.5, conf_thr=0.5):
 
 
 
-with open('/home/tarun/caltech-ee148/project/output_files/preds_val2.json') as f:
+with open('/home/tarun/caltech-ee148/project/output_files/preds_val_manually_annotated.json') as f:
 	preds_val = json.load(f)
 	
-with open('/home/tarun/caltech-ee148/project/annotations/val.json') as f:
+with open('/home/tarun/caltech-ee148/project/annotations/manually_annotated_val.json') as f:
 	gts_val = json.load(f)
 
 
@@ -139,7 +139,7 @@ plt.xlabel('recall')
 plt.ylabel('precision')
 plt.title('precision recall curve - ant validation set')
 
-for iou_thresh in np.array([0.5]):
+for iou_thresh in np.array([0.3]):
     tp_train = np.zeros(len(confidence_thrs))
     fp_train = np.zeros(len(confidence_thrs))
     fn_train = np.zeros(len(confidence_thrs))
@@ -153,15 +153,19 @@ for iou_thresh in np.array([0.5]):
     recall_list = []
 
     for i in range(0,confidence_thrs.shape[0]):
+        print ('###' + str(confidence_thrs[i]) + '###')
+        
         precision = tp_train[i]/(tp_train[i] + fp_train[i])
         recall = tp_train[i]/(tp_train[i] + fn_train[i])
         if precision==0 and recall==0:
             continue
+        print (precision, recall)
+
         precision_list.append(precision)
         recall_list.append(recall)
 
     #print (iou_thresh)
-    print (recall_list, precision_list)
+    #print (recall_list, precision_list)
     #import ipdb;ipdb.set_trace()
     plt.plot(np.array(recall_list), np.array(precision_list), label='iou_thresh: '+str(iou_thresh))
 

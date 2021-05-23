@@ -52,9 +52,9 @@ def compute_iou(box_1, box_2):
 
 ## background subtraction 
 ## subtract the future frames from the current one and use that as a channel
-vid_folder = '2021-05-07_19_01_01'
-parent_folder = '/home/tarun/caltech-ee148/project/'
-cap = cv2.VideoCapture("/home/tarun/Downloads/"+vid_folder+"/vid.h264")
+vid_folder = '2021-05-13_11_01_00'
+parent_folder = '/home/tarun/Downloads/ant-data/beer-tree/'
+cap = cv2.VideoCapture(parent_folder+vid_folder+"/vid.h264")
 total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 #fourcc = cv2.VideoWriter_fourcc(*'MP4V')
 #out = cv2.VideoWriter('/home/tarun/Downloads/04_07_2021_13_30_23_cropped_HEQ-MOG-ED_vs_HEQ-MOG-noED.mp4', fourcc, 30, (640*2,480))
@@ -66,15 +66,14 @@ list_of_areas = []
 #os.makedirs(parent_folder+vid_folder, exist_ok=True)
 # write the annotations
 annotations = {}
-thresh = 90
+thresh = 35
 
 while(1):
 	if frame_number > 3500:
 		break
 	ret, frame = cap.read()
-	frame = frame[:, 50:-50, :]
+	frame = frame[:, 50:-100, :]
 	frame  = cv2.resize(frame, (640,480))
-
 	boxes_color = []
 	boxes_bg = []
 
@@ -129,9 +128,9 @@ while(1):
 
 	#### background subtraction approach #######
 
-	contours,hierarchy = cv2.findContours(fgmask_bgsub, 1, 2)
+	contours2,hierarchy = cv2.findContours(fgmask_bgsub, 1, 2)
 	idx = 0
-	for cnt in contours:
+	for cnt in contours2:
 		area = cv2.contourArea(cnt)
 		if area > 400 and area < 800:
 			x,y,w,h = cv2.boundingRect(cnt)
@@ -144,66 +143,65 @@ while(1):
 	
 
 	##### now calculate overlap between boxes detected by both approachs and reject double counting (if two boxes overlap then take smaller box)
-	if len(boxes_bg) == 0 or len(boxes_color) == 0:
+	if len(boxes_bg) == 0 and len(boxes_color) == 0:
+		print ('no boxes detected')
 		frame_number += 1
 		continue
 
-	annotations[parent_folder + 'images/' + vid_folder + '_' +str(frame_number)+'.png'] = []
+	annotations['/home/tarun/caltech-ee148/project/images/' + vid_folder + '_' +str(frame_number)+'.png'] = []
 
 	boxes_color = np.array(boxes_color)
 	boxes_bg = np.array(boxes_bg)
 	idxs_to_reject = []
 
-	for i in range(0,boxes_bg.shape[0]):
-		# I am going to use top left corner of each box as an anchor point and find boxes from boxes_color close to that point
-		near_x = np.where(abs(boxes_color[:,0] - boxes_bg[i][0]) < 100)[0]
-		near_y = np.where(abs(boxes_color[:,1] - boxes_bg[i][1]) < 100)[0]
-		box_idxs = np.intersect1d(near_x, near_y)
+	if len(boxes_color) > 0:
+		for i in range(0,boxes_bg.shape[0]):
+			# I am going to use top left corner of each box as an anchor point and find boxes from boxes_color close to that point
+			near_x = np.where(abs(boxes_color[:,0] - boxes_bg[i][0]) < 100)[0]
+			near_y = np.where(abs(boxes_color[:,1] - boxes_bg[i][1]) < 100)[0]
+			box_idxs = np.intersect1d(near_x, near_y)
 
-		# for each of these box_idxs, calculate the overlap between the box_idx and the box_bg...keep the smaller one
-		for k in box_idxs:
-			iou = compute_iou(list(boxes_bg[i]), list(boxes_color[k]))
-			# if there is sufficient overlap, then this means that the bigger box (almost always bg box) should be removed
-			if iou >= 0.3:
-				idxs_to_reject.append(i)
-				continue
+			# for each of these box_idxs, calculate the overlap between the box_idx and the box_bg...keep the smaller one
+			for k in box_idxs:
+				iou = compute_iou(list(boxes_bg[i]), list(boxes_color[k]))
+				# if there is sufficient overlap, then this means that the bigger box (almost always bg box) should be removed
+				if iou >= 0.3:
+					idxs_to_reject.append(i)
+					continue
 
 	
 	## now draw all boxes in boxes_color and all boxes except idxs_to_reject from boxes_bg
 	idx = 0
 	for b in boxes_color:
-		#frame2 = cv2.rectangle(frame2,(b[0],b[1]),(b[2],b[3]),(255,0,0),3)
-		annotations[parent_folder + 'images/' + vid_folder + '_' +str(frame_number)+'.png'].append({'key':idx,'bbox':[int(b[0]),int(b[1]),int(b[2]),int(b[3])]})
+		frame2 = cv2.rectangle(frame2,(b[0],b[1]),(b[2],b[3]),(255,0,0),3)
+		annotations['/home/tarun/caltech-ee148/project/images/' + vid_folder + '_' +str(frame_number)+'.png'].append({'key':idx,'bbox':[int(b[0]),int(b[1]),int(b[2]),int(b[3])]})
 		idx += 1
 
 	for k,b in enumerate(boxes_bg):
 		if k in idxs_to_reject:
 			continue
-		#frame2 = cv2.rectangle(frame2,(b[0],b[1]),(b[2],b[3]),(0,255,0),3)
-		annotations[parent_folder + 'images/' + vid_folder + '_' +str(frame_number)+'.png'].append({'key':idx,'bbox':[int(b[0]),int(b[1]),int(b[2]),int(b[3])]})
+		frame2 = cv2.rectangle(frame2,(b[0],b[1]),(b[2],b[3]),(0,255,0),3)
+		annotations['/home/tarun/caltech-ee148/project/images/' + vid_folder + '_' +str(frame_number)+'.png'].append({'key':idx,'bbox':[int(b[0]),int(b[1]),int(b[2]),int(b[3])]})
 		idx += 1
 
 
-	#cv2.imshow('w', frame2)
-	#cv2.waitKey(30)
-	#cv2.imwrite(parent_folder + vid_folder + '/' + vid_folder + '_' +str(frame_number)+'.png', frame2)
-	cv2.imwrite(parent_folder + 'images/' + vid_folder + '_' +str(frame_number)+'.png', frame2)
+	cv2.imshow('w', frame2)
+	cv2.waitKey(30)
+	#cv2.imwrite('/home/tarun/caltech-ee148/project/images/' + vid_folder + '_' +str(frame_number)+'.png', frame2)
 	frame_number += 1
 
 
 
-# write all annotations (from multiple videos) to json
-if path.exists(parent_folder + 'annotations/all.json'):
-	with open(parent_folder + 'annotations/all.json', 'r+') as outfile:
-		data = json.load(outfile)
-		data.update(annotations)
-		outfile.seek(0)
-		json.dump(data, outfile)
-else:
-	with open(parent_folder + 'annotations/all.json', 'w') as outfile:
-		json.dump(annotations, outfile)
+### write all annotations (from multiple videos) to json
+# if path.exists('/home/tarun/caltech-ee148/project/annotations/all.json'):
+# 	with open('/home/tarun/caltech-ee148/project/annotations/all.json', 'r+') as outfile:
+# 		data = json.load(outfile)
+# 		data.update(annotations)
+# 		outfile.seek(0)
+# 		json.dump(data, outfile)
+# else:
+# 	with open('/home/tarun/caltech-ee148/project/annotations/all.json', 'w') as outfile:
+# 		json.dump(annotations, outfile)
 
 cap.release()
 cv2.destroyAllWindows()
-
-	
