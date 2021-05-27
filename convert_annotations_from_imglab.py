@@ -7,7 +7,7 @@ import numpy as np
 import os
 from os import path
 
-f= open('/home/tarun/Downloads/92_coco_imglab.json')
+f= open('/home/tarun/Downloads/2_coco_imglab.json')
 data = json.load(f)
 
 images = data['images']

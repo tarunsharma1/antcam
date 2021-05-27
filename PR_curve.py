@@ -114,10 +114,10 @@ def compute_counts(preds, gts, iou_thr=0.5, conf_thr=0.5):
 
 
 
-with open('/home/tarun/caltech-ee148/project/output_files/preds_val_manually_annotated.json') as f:
+with open('/home/tarun/caltech-ee148/project/output_files/preds_test_manually_annotated.json') as f:
 	preds_val = json.load(f)
 	
-with open('/home/tarun/caltech-ee148/project/annotations/manually_annotated_val.json') as f:
+with open('/home/tarun/caltech-ee148/project/annotations/manually_annotated_test.json') as f:
 	gts_val = json.load(f)
 
 
@@ -137,9 +137,9 @@ plt.xlim([0,1])
 #plt.ylim([0,1])
 plt.xlabel('recall')
 plt.ylabel('precision')
-plt.title('precision recall curve - ant validation set')
+plt.title('precision recall curve - ant test set')
 
-for iou_thresh in np.array([0.3]):
+for iou_thresh in np.array([0.5]):
     tp_train = np.zeros(len(confidence_thrs))
     fp_train = np.zeros(len(confidence_thrs))
     fn_train = np.zeros(len(confidence_thrs))
@@ -167,7 +167,9 @@ for iou_thresh in np.array([0.3]):
     #print (iou_thresh)
     #print (recall_list, precision_list)
     #import ipdb;ipdb.set_trace()
-    plt.plot(np.array(recall_list), np.array(precision_list), label='iou_thresh: '+str(iou_thresh))
+    plt.plot(np.array(recall_list), np.array(precision_list),c='tab:blue', label=' model trained on courtyard + ant nest data')
 
 plt.legend()
 plt.show()
+
+
